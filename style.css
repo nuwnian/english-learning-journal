@@ -1,0 +1,397 @@
+ body {
+      font-family: 'Quicksand', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #739B4F;
+      color: #36454F;
+    }
+    header {
+      background-image: url('sumeru-academy.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      color: #22471C;
+      padding: 3rem 2rem;
+      text-align: center;
+      min-height: 200px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+    }
+    header::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(255, 255, 255, 0.6);
+      z-index: 0;
+    }
+    header h1, header p {
+      position: relative;
+      z-index: 1;
+    }
+    header h1 {
+      font-family: 'Poppins', sans-serif;
+      font-weight: 700;
+      margin: 0;
+    }
+    header p {
+      font-family: 'Quicksand', sans-serif;
+      font-weight: 400;
+      margin: 0.5rem 0 0 0;
+    }
+    nav {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      background-color: #B6C657;
+      padding: 1rem;
+    }
+    nav a {
+      text-decoration: none;
+      color: #123777;
+      font-weight: 600;
+      font-family: 'Quicksand', sans-serif;
+    }
+    main {
+      padding: 2rem;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    section {
+      background-color: white;
+      border-radius: 1rem;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    h1, h2, h3 {
+      font-family: 'Poppins', sans-serif;
+      font-weight: 600;
+    }
+    h2 {
+      color: #2A52BE;
+    }
+    .vocab-item, .sentence-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem;
+      margin: 0.5rem 0;
+      border-radius: 0.25rem;
+      background-color: #f9f9f9;
+    }
+    .vocab-item:hover, .sentence-item:hover {
+      background-color: #f0f0f0;
+    }
+    .item-content {
+      flex-grow: 1;
+      cursor: pointer;
+    }
+    .item-actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-left: 1rem;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .vocab-item.show-actions .item-actions,
+    .sentence-item.show-actions .item-actions {
+      opacity: 1;
+    }
+    .edit-btn, .delete-btn {
+      background-color: #2A52BE;
+      color: white;
+      border: none;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.25rem;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-family: 'Quicksand', sans-serif;
+    }
+    .delete-btn {
+      background-color: #dc3545;
+    }
+    .edit-btn:hover {
+      background-color: #1e3a8a;
+    }
+    .delete-btn:hover {
+      background-color: #c82333;
+    }
+    #vocab ul {
+      list-style: none;
+      padding: 0;
+    }
+    #vocab li {
+      list-style: none;
+    }
+    .grammar-rule {
+      background-color: #f8f9ff;
+      border-left: 4px solid #2A52BE;
+      padding: 1rem;
+      margin: 1rem 0;
+      border-radius: 0.5rem;
+    }
+    .grammar-rule h3 {
+      margin-top: 0;
+      color: #2A52BE;
+    }
+    .grammar-rule p {
+      margin: 0.5rem 0;
+      line-height: 1.6;
+    }
+    .add-vocab-form {
+      background-color: #D0F0A6;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+    .add-vocab-form h3 {
+      margin-top: 0;
+      color: #36454F;
+    }
+    .add-vocab-form input {
+      width: 100%;
+      max-width: 400px;
+      padding: 0.5rem;
+      margin: 0.25rem auto;
+      border: 1px solid #B6C657;
+      border-radius: 0.25rem;
+      font-family: 'Quicksand', sans-serif;
+      display: block;
+    }
+    .add-vocab-form button {
+      background-color: #2A52BE;
+      color: white;
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 0.25rem;
+      cursor: pointer;
+      font-family: 'Quicksand', sans-serif;
+      font-weight: 600;
+      margin-top: 0.5rem;
+      display: inline-block;
+    }
+    .add-vocab-form button:hover {
+      background-color: #36454F;
+    }
+    .add-sentence-form {
+      background-color: #D0F0A6;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+    .add-sentence-form h3 {
+      margin-top: 0;
+      color: #36454F;
+    }
+    .add-sentence-form textarea {
+      width: 100%;
+      max-width: 400px;
+      padding: 0.5rem;
+      margin: 0.25rem auto;
+      border: 1px solid #AB956A;
+      border-radius: 0.25rem;
+      font-family: 'Quicksand', sans-serif;
+      resize: vertical;
+      min-height: 60px;
+      display: block;
+    }
+    .add-sentence-form input {
+      width: 100%;
+      max-width: 400px;
+      padding: 0.5rem;
+      margin: 0.25rem auto;
+      border: 1px solid #AB956A;
+      border-radius: 0.25rem;
+      font-family: 'Quicksand', sans-serif;
+      display: block;
+    }
+    .add-sentence-form button {
+      background-color: #2A52BE;
+      color: white;
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 0.25rem;
+      cursor: pointer;
+      font-family: 'Quicksand', sans-serif;
+      font-weight: 600;
+      margin-top: 0.5rem;
+      display: inline-block;
+    }
+    .add-sentence-form button:hover {
+      background-color: #36454F;
+    }
+    .sentence-list p {
+      font-style: italic;
+      padding: 0.5rem;
+      margin: 0.5rem 0;
+      border-left: 3px solid #AB956A;
+      background-color: #f9f9f9;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .sentence-list p:hover {
+      background-color: #D0F0A6;
+      transform: translateX(5px);
+    }
+    .sentence-list p.favorite {
+      background-color: #D0F0A6;
+      border-left-color: #2A52BE;
+    }
+    footer {
+      text-align: center;
+      padding: 1rem;
+      background-color: #B6C657;
+      color: white;
+    }
+
+    /* Custom notification popup styles */
+    .notification-popup {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: linear-gradient(135deg, #D0F0A6 0%, #B6C657 100%);
+      color: #36454F;
+      padding: 1rem 1.5rem;
+      border-radius: 0.75rem;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+      font-family: 'Quicksand', sans-serif;
+      font-weight: 600;
+      font-size: 0.95rem;
+      z-index: 1000;
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.8);
+      transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      border: 2px solid rgba(42, 82, 190, 0.1);
+      backdrop-filter: blur(10px);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      min-width: 200px;
+      text-align: center;
+    }
+
+    .notification-popup.show {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    .notification-popup.success {
+      background: linear-gradient(135deg, #D0F0A6 0%, #B6C657 100%);
+      border-color: rgba(42, 82, 190, 0.2);
+    }
+
+    .notification-popup.edit {
+      background: linear-gradient(135deg, #E6E6FA 0%, #2A52BE 100%);
+      color: white;
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .notification-popup.delete {
+      background: linear-gradient(135deg, #FFB6C1 0%, #dc3545 100%);
+      color: white;
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .notification-popup .icon {
+      font-size: 1.2rem;
+    }
+
+    /* Custom confirmation dialog styles */
+    .confirm-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(5px);
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .confirm-overlay.show {
+      opacity: 1;
+    }
+
+    .confirm-dialog {
+      background: white;
+      border-radius: 1rem;
+      padding: 1.5rem;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+      font-family: 'Quicksand', sans-serif;
+      text-align: center;
+      max-width: 400px;
+      margin: 1rem;
+      transform: scale(0.8);
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .confirm-overlay.show .confirm-dialog {
+      transform: scale(1);
+    }
+
+    .confirm-dialog .icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+
+    .confirm-dialog h3 {
+      margin: 0 0 0.5rem 0;
+      color: #36454F;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    .confirm-dialog p {
+      margin: 0 0 1.5rem 0;
+      color: #666;
+      line-height: 1.5;
+    }
+
+    .confirm-buttons {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: center;
+    }
+
+    .confirm-btn {
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 0.5rem;
+      font-family: 'Quicksand', sans-serif;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      min-width: 100px;
+    }
+
+    .confirm-btn.cancel {
+      background-color: #f8f9fa;
+      color: #6c757d;
+      border: 2px solid #dee2e6;
+    }
+
+    .confirm-btn.cancel:hover {
+      background-color: #e9ecef;
+    }
+
+    .confirm-btn.delete {
+      background-color: #dc3545;
+      color: white;
+    }
+
+    .confirm-btn.delete:hover {
+      background-color: #c82333;
+      transform: translateY(-1px);
+    }
