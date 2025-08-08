@@ -4,6 +4,16 @@
 let savedVocab = JSON.parse(localStorage.getItem('vocabList')) || [];
 let savedSentences = JSON.parse(localStorage.getItem('sentenceList')) || [];
 
+// Search functionality
+let searchResults = [];
+let currentSearchTerm = '';
+
+// Translation toggle state
+let translationsVisible = false;
+
+// AI Suggestions state
+let aiSuggestionsEnabled = true;
+
 // Debug: Check what's in localStorage
 console.log('Saved vocabulary:', savedVocab);
 console.log('Saved sentences:', savedSentences);
@@ -113,9 +123,29 @@ document.addEventListener('DOMContentLoaded', function() {
     loadSavedVocab();
     loadSavedSentences();
     
+    // Initialize search functionality
+    initializeSearch();
+    
+    // Initialize enhanced navigation
+    initializeNavigation();
+    
+    // Initialize mobile-specific features
+    initializeMobileFeatures();
+    
+    // Initialize translation toggle
+    initializeTranslationToggle();
+    
+    // Initialize AI vocabulary suggestions
+    initializeAISuggestions();
+    
+    // Initialize form toggles
+    initializeFormToggles();
+    
     // Add Enter key support for vocabulary form
     const newWordInput = document.getElementById('newWord');
     const newDefinitionInput = document.getElementById('newDefinition');
+    const newWordIDInput = document.getElementById('newWordID');
+    const newDefinitionIDInput = document.getElementById('newDefinitionID');
     
     if (newWordInput && newDefinitionInput) {
         newWordInput.addEventListener('keypress', function(e) {
@@ -126,9 +156,27 @@ document.addEventListener('DOMContentLoaded', function() {
         
         newDefinitionInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
-                addNewVocab(); // Save the word
+                if (newWordIDInput) {
+                    newWordIDInput.focus(); // Move to Indonesian word field
+                } else {
+                    addNewVocab(); // Save the word if no Indonesian fields
+                }
             }
         });
+        
+        if (newWordIDInput && newDefinitionIDInput) {
+            newWordIDInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    newDefinitionIDInput.focus(); // Move to Indonesian definition field
+                }
+            });
+            
+            newDefinitionIDInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    addNewVocab(); // Save the word
+                }
+            });
+        }
     }
     
     // Add click effects to navigation links
@@ -182,7 +230,7 @@ function loadSavedVocab() {
     const vocabList = document.querySelector('#vocab ul');
     vocabList.innerHTML = ''; // Clear existing items first
     savedVocab.forEach((vocab, index) => {
-        addVocabularyToDOM(vocab.word, vocab.definition, index);
+        addVocabularyToDOM(vocab.word, vocab.definition, index, vocab.wordID || '', vocab.definitionID || '');
     });
 }
 
@@ -191,7 +239,7 @@ function loadSavedSentences() {
     const sentenceList = document.querySelector('.sentence-list');
     sentenceList.innerHTML = ''; // Clear existing items first
     savedSentences.forEach((sentence, index) => {
-        addSentenceToDOM(sentence.text, sentence.author, index);
+        addSentenceToDOM(sentence.text, sentence.author, index, sentence.textID || '');
     });
 }
 
@@ -200,7 +248,7 @@ function refreshVocabDisplay() {
     const vocabList = document.querySelector('#vocab ul');
     vocabList.innerHTML = '';
     savedVocab.forEach((vocab, index) => {
-        addVocabularyToDOM(vocab.word, vocab.definition, index);
+        addVocabularyToDOM(vocab.word, vocab.definition, index, vocab.wordID || '', vocab.definitionID || '');
     });
 }
 
@@ -209,18 +257,28 @@ function refreshSentencesDisplay() {
     const sentenceList = document.querySelector('.sentence-list');
     sentenceList.innerHTML = '';
     savedSentences.forEach((sentence, index) => {
-        addSentenceToDOM(sentence.text, sentence.author, index);
+        addSentenceToDOM(sentence.text, sentence.author, index, sentence.textID || '');
     });
 }
 
 // Function to add vocabulary to DOM only
-function addVocabularyToDOM(word, definition, index) {
+function addVocabularyToDOM(word, definition, index, wordID = '', definitionID = '') {
     const vocabList = document.querySelector('#vocab ul');
     const newItem = document.createElement('li');
     newItem.className = 'vocab-item';
+    
+    const translationHTML = (wordID || definitionID) ? `
+        <div class="translation" style="display: ${translationsVisible ? 'block' : 'none'};">
+            <strong>${wordID || word}</strong> – ${definitionID || definition}
+        </div>
+    ` : '';
+    
     newItem.innerHTML = `
-        <div class="item-content">
-            <strong>${word}</strong> – ${definition}
+        <div class="vocab-item-content">
+            <div class="item-content">
+                <strong>${word}</strong> – ${definition}
+            </div>
+            ${translationHTML}
         </div>
         <div class="item-actions">
             <button class="edit-btn" onclick="editVocab(${index})">📝 Edit</button>
@@ -249,9 +307,14 @@ function addVocabularyToDOM(word, definition, index) {
 }
 
 // Function to add new vocabulary word
-function addVocabulary(word, definition) {
+function addVocabulary(word, definition, wordID = '', definitionID = '') {
     // Save to localStorage first
-    savedVocab.push({ word: word, definition: definition });
+    savedVocab.push({ 
+        word: word, 
+        definition: definition, 
+        wordID: wordID, 
+        definitionID: definitionID 
+    });
     localStorage.setItem('vocabList', JSON.stringify(savedVocab));
     
     // Refresh the entire display to ensure correct indexes
@@ -262,19 +325,36 @@ function addVocabulary(word, definition) {
 function addNewVocab() {
     const wordInput = document.getElementById('newWord');
     const definitionInput = document.getElementById('newDefinition');
+    const wordIDInput = document.getElementById('newWordID');
+    const definitionIDInput = document.getElementById('newDefinitionID');
     
     const word = wordInput.value.trim();
     const definition = definitionInput.value.trim();
+    const wordID = wordIDInput ? wordIDInput.value.trim() : '';
+    const definitionID = definitionIDInput ? definitionIDInput.value.trim() : '';
     
     if (word && definition) {
-        addVocabulary(word, definition);
+        addVocabulary(word, definition, wordID, definitionID);
         
         // Clear the form
         wordInput.value = '';
         definitionInput.value = '';
+        if (wordIDInput) wordIDInput.value = '';
+        if (definitionIDInput) definitionIDInput.value = '';
+        
+        // Hide AI suggestions after adding
+        hideAISuggestions();
         
         // Show custom notification
         showNotification(`Word "${word}" added successfully!`, 'success', '📖');
+        
+        // Optional: Hide the form after adding
+        const vocabForm = document.getElementById('vocabForm');
+        const toggleBtn = document.getElementById('toggleVocabForm');
+        if (vocabForm && toggleBtn) {
+            vocabForm.style.display = 'none';
+            toggleBtn.classList.remove('active');
+        }
     } else {
         // Show error notification for empty fields
         showNotification('Please fill in both the word and definition!', 'delete', '⚠️');
@@ -282,15 +362,24 @@ function addNewVocab() {
 }
 
 // Function to add sentence to DOM only
-function addSentenceToDOM(sentence, author, index) {
+function addSentenceToDOM(sentence, author, index, sentenceID = '') {
     const sentenceList = document.querySelector('.sentence-list');
     const newSentence = document.createElement('div');
     newSentence.className = 'sentence-item';
     
     const sentenceText = author ? `"${sentence}" – ${author}` : `"${sentence}"`;
+    const translationHTML = sentenceID ? `
+        <div class="translation" style="display: ${translationsVisible ? 'block' : 'none'};">
+            <p style="font-style: italic;">"${sentenceID}"${author ? ` – ${author}` : ''}</p>
+        </div>
+    ` : '';
+    
     newSentence.innerHTML = `
-        <div class="item-content" style="font-style: italic;">
-            ${sentenceText}
+        <div class="sentence-item-content">
+            <div class="item-content" style="font-style: italic;">
+                ${sentenceText}
+            </div>
+            ${translationHTML}
         </div>
         <div class="item-actions">
             <button class="edit-btn" onclick="editSentence(${index})">📝 Edit</button>
@@ -329,9 +418,13 @@ function addSentenceToDOM(sentence, author, index) {
 }
 
 // Function to add new sentence
-function addSentence(sentence, author) {
+function addSentence(sentence, author, sentenceID = '') {
     // Save to localStorage first
-    savedSentences.push({ text: sentence, author: author });
+    savedSentences.push({ 
+        text: sentence, 
+        author: author, 
+        textID: sentenceID 
+    });
     localStorage.setItem('sentenceList', JSON.stringify(savedSentences));
     
     // Refresh the entire display to ensure correct indexes
@@ -342,19 +435,30 @@ function addSentence(sentence, author) {
 function addNewSentence() {
     const sentenceInput = document.getElementById('newSentence');
     const authorInput = document.getElementById('sentenceAuthor');
+    const sentenceIDInput = document.getElementById('newSentenceID');
     
     const sentence = sentenceInput.value.trim();
     const author = authorInput.value.trim();
+    const sentenceID = sentenceIDInput ? sentenceIDInput.value.trim() : '';
     
     if (sentence) {
-        addSentence(sentence, author);
+        addSentence(sentence, author, sentenceID);
         
         // Clear the form
         sentenceInput.value = '';
         authorInput.value = '';
+        if (sentenceIDInput) sentenceIDInput.value = '';
         
         // Show custom notification
         showNotification('Sentence added to your collection!', 'success', '✍️');
+        
+        // Optional: Hide the form after adding
+        const sentenceForm = document.getElementById('sentenceForm');
+        const toggleBtn = document.getElementById('toggleSentenceForm');
+        if (sentenceForm && toggleBtn) {
+            sentenceForm.style.display = 'none';
+            toggleBtn.classList.remove('active');
+        }
     } else {
         showNotification('Please enter a sentence!', 'delete', '⚠️');
     }
@@ -465,5 +569,717 @@ function recoverData() {
 // Auto-run recovery on page load
 setTimeout(recoverData, 1000);
 
+// Search Functionality
+function initializeSearch() {
+    const searchInput = document.getElementById('searchInput');
+    const searchResults = document.getElementById('searchResults');
+    const clearSearchBtn = document.getElementById('clearSearch');
+    const searchCount = document.getElementById('searchCount');
+    
+    if (!searchInput) return;
+    
+    // Search input event
+    searchInput.addEventListener('input', function(e) {
+        const searchTerm = e.target.value.trim();
+        currentSearchTerm = searchTerm;
+        
+        if (searchTerm.length === 0) {
+            hideSearchResults();
+            clearHighlights();
+            clearSearchBtn.style.display = 'none';
+            searchCount.textContent = '';
+            return;
+        }
+        
+        if (searchTerm.length >= 2) {
+            performSearch(searchTerm);
+        }
+    });
+    
+    // Clear search button
+    clearSearchBtn.addEventListener('click', function() {
+        searchInput.value = '';
+        currentSearchTerm = '';
+        hideSearchResults();
+        clearHighlights();
+        clearSearchBtn.style.display = 'none';
+        searchCount.textContent = '';
+        searchInput.focus();
+    });
+    
+    // Hide search results when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.search-container')) {
+            hideSearchResults();
+        }
+    });
+}
+
+function performSearch(searchTerm) {
+    const results = [];
+    const term = searchTerm.toLowerCase();
+    
+    // Search vocabulary
+    savedVocab.forEach((vocab, index) => {
+        if (vocab.word.toLowerCase().includes(term) || vocab.definition.toLowerCase().includes(term)) {
+            results.push({
+                type: 'vocabulary',
+                title: vocab.word,
+                content: vocab.definition,
+                section: 'vocab',
+                index: index
+            });
+        }
+    });
+    
+    // Search sentences
+    savedSentences.forEach((sentence, index) => {
+        if (sentence.text.toLowerCase().includes(term) || (sentence.author && sentence.author.toLowerCase().includes(term))) {
+            results.push({
+                type: 'sentence',
+                title: sentence.text.substring(0, 50) + (sentence.text.length > 50 ? '...' : ''),
+                content: sentence.author || 'No author',
+                section: 'sentences',
+                index: index
+            });
+        }
+    });
+    
+    // Search grammar content
+    const grammarSection = document.querySelector('#grammar');
+    if (grammarSection) {
+        const grammarText = grammarSection.textContent.toLowerCase();
+        if (grammarText.includes(term)) {
+            results.push({
+                type: 'grammar',
+                title: 'Grammar Section',
+                content: 'Found in grammar rules and examples',
+                section: 'grammar',
+                index: -1
+            });
+        }
+    }
+    
+    displaySearchResults(results);
+    highlightSearchTerms(searchTerm);
+    
+    // Update UI elements
+    const clearSearchBtn = document.getElementById('clearSearch');
+    const searchCount = document.getElementById('searchCount');
+    
+    clearSearchBtn.style.display = results.length > 0 || currentSearchTerm ? 'block' : 'none';
+    searchCount.textContent = results.length > 0 ? `${results.length} found` : currentSearchTerm ? 'No matches' : '';
+}
+
+function displaySearchResults(results) {
+    const searchResultsDiv = document.getElementById('searchResults');
+    
+    if (results.length === 0) {
+        searchResultsDiv.innerHTML = '<div class="search-result-item">No results found</div>';
+        searchResultsDiv.style.display = 'block';
+        return;
+    }
+    
+    const resultsHTML = results.map(result => `
+        <div class="search-result-item" onclick="navigateToResult('${result.section}', ${result.index})">
+            <div class="search-result-type">${result.type}</div>
+            <div><strong>${highlightText(result.title, currentSearchTerm)}</strong></div>
+            <div style="font-size: 0.9rem; color: #666;">${highlightText(result.content, currentSearchTerm)}</div>
+        </div>
+    `).join('');
+    
+    searchResultsDiv.innerHTML = resultsHTML;
+    searchResultsDiv.style.display = 'block';
+}
+
+function highlightText(text, searchTerm) {
+    if (!searchTerm) return text;
+    const regex = new RegExp(`(${searchTerm})`, 'gi');
+    return text.replace(regex, '<span class="search-highlight">$1</span>');
+}
+
+function highlightSearchTerms(searchTerm) {
+    clearHighlights();
+    
+    if (!searchTerm) return;
+    
+    const sections = ['vocab', 'grammar', 'sentences'];
+    
+    sections.forEach(sectionId => {
+        const section = document.getElementById(sectionId);
+        if (section) {
+            highlightInElement(section, searchTerm);
+        }
+    });
+}
+
+function highlightInElement(element, searchTerm) {
+    const walker = document.createTreeWalker(
+        element,
+        NodeFilter.SHOW_TEXT,
+        null,
+        false
+    );
+    
+    const textNodes = [];
+    let node;
+    
+    while (node = walker.nextNode()) {
+        if (node.nodeValue.toLowerCase().includes(searchTerm.toLowerCase())) {
+            textNodes.push(node);
+        }
+    }
+    
+    textNodes.forEach(textNode => {
+        const parent = textNode.parentNode;
+        if (parent.classList.contains('search-highlight')) return;
+        
+        const regex = new RegExp(`(${searchTerm})`, 'gi');
+        const highlightedText = textNode.nodeValue.replace(regex, '<span class="search-highlight">$1</span>');
+        
+        if (highlightedText !== textNode.nodeValue) {
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = highlightedText;
+            
+            while (wrapper.firstChild) {
+                parent.insertBefore(wrapper.firstChild, textNode);
+            }
+            parent.removeChild(textNode);
+        }
+    });
+}
+
+function clearHighlights() {
+    const highlights = document.querySelectorAll('.search-highlight');
+    highlights.forEach(highlight => {
+        const parent = highlight.parentNode;
+        parent.replaceChild(document.createTextNode(highlight.textContent), highlight);
+        parent.normalize();
+    });
+}
+
+function hideSearchResults() {
+    const searchResultsDiv = document.getElementById('searchResults');
+    searchResultsDiv.style.display = 'none';
+}
+
+function navigateToResult(section, index) {
+    hideSearchResults();
+    
+    // Smooth scroll to section
+    const targetSection = document.getElementById(section);
+    if (targetSection) {
+        targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        
+        // Update active navigation
+        updateActiveNavigation(section);
+        
+        // If it's a specific item, highlight it briefly
+        if (index >= 0) {
+            setTimeout(() => {
+                const items = section === 'vocab' ? 
+                    document.querySelectorAll('.vocab-item') : 
+                    document.querySelectorAll('.sentence-item');
+                
+                if (items[index]) {
+                    items[index].style.transform = 'scale(1.05)';
+                    items[index].style.boxShadow = '0 8px 25px rgba(107, 115, 255, 0.3)';
+                    
+                    setTimeout(() => {
+                        items[index].style.transform = '';
+                        items[index].style.boxShadow = '';
+                    }, 1500);
+                }
+            }, 500);
+        }
+    }
+}
+
+// Mobile-specific features
+function initializeMobileFeatures() {
+    // Auto-hide search results on mobile when scrolling
+    let scrollTimeout;
+    window.addEventListener('scroll', function() {
+        if (window.innerWidth <= 768) {
+            clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(() => {
+                if (document.getElementById('searchInput') !== document.activeElement) {
+                    hideSearchResults();
+                }
+            }, 150);
+        }
+    });
+    
+    // Better mobile keyboard handling
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('focus', function() {
+            // Scroll to top on mobile when focusing search
+            if (window.innerWidth <= 768) {
+                setTimeout(() => {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }, 100);
+            }
+        });
+        
+        // Hide results when losing focus on mobile
+        searchInput.addEventListener('blur', function() {
+            if (window.innerWidth <= 768) {
+                setTimeout(() => {
+                    hideSearchResults();
+                }, 200); // Delay to allow result clicks
+            }
+        });
+    }
+    
+    // Touch-friendly interactions for dynamically created elements
+    document.addEventListener('click', function(e) {
+        if (e.target.matches('.vocab-item, .sentence-item')) {
+            // Add subtle feedback for touch on mobile
+            if (window.innerWidth <= 768) {
+                e.target.style.transform = 'scale(0.98)';
+                setTimeout(() => {
+                    e.target.style.transform = '';
+                }, 150);
+            }
+        }
+    });
+}
+
+// Enhanced Navigation
+function initializeNavigation() {
+    const navLinks = document.querySelectorAll('nav a[href^="#"]');
+    
+    navLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('href').substring(1);
+            const targetSection = document.getElementById(targetId);
+            
+            if (targetSection) {
+                targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                updateActiveNavigation(targetId);
+            }
+        });
+    });
+    
+    // Update active navigation on scroll
+    window.addEventListener('scroll', updateNavigationOnScroll);
+}
+
+function updateActiveNavigation(activeSection) {
+    const navLinks = document.querySelectorAll('nav a[href^="#"]');
+    
+    navLinks.forEach(link => {
+        const href = link.getAttribute('href').substring(1);
+        if (href === activeSection) {
+            link.classList.add('active');
+        } else {
+            link.classList.remove('active');
+        }
+    });
+}
+
+function updateNavigationOnScroll() {
+    const sections = document.querySelectorAll('section[id]');
+    const scrollPos = window.scrollY + 200;
+    
+    sections.forEach(section => {
+        const top = section.offsetTop;
+        const bottom = top + section.offsetHeight;
+        
+        if (scrollPos >= top && scrollPos <= bottom) {
+            updateActiveNavigation(section.id);
+        }
+    });
+}
+
 // Example usage:
 // addVocabulary('Perseverance', 'persistence in doing something despite difficulty or delay');
+
+// Translation Toggle Functions
+function initializeTranslationToggle() {
+    const toggleBtn = document.getElementById('translationToggle');
+    if (!toggleBtn) return;
+    
+    // Load saved preference
+    translationsVisible = localStorage.getItem('translationsVisible') === 'true';
+    updateTranslationButton(toggleBtn);
+    updateTranslationVisibility();
+    
+    // Add click event
+    toggleBtn.addEventListener('click', function() {
+        translationsVisible = !translationsVisible;
+        localStorage.setItem('translationsVisible', translationsVisible.toString());
+        
+        updateTranslationButton(toggleBtn);
+        updateTranslationVisibility();
+        
+        // Show notification
+        const message = translationsVisible ? 
+            'Indonesian translations shown! 🇮🇩' : 
+            'Indonesian translations hidden! 🇺🇸';
+        showNotification(message, 'success', translationsVisible ? '🇮🇩' : '🇺🇸');
+    });
+}
+
+function updateTranslationButton(button) {
+    if (translationsVisible) {
+        button.textContent = '🇺🇸 EN';
+        button.classList.add('active');
+        button.title = 'Hide Indonesian translations';
+    } else {
+        button.textContent = '🇮🇩 ID';
+        button.classList.remove('active');
+        button.title = 'Show Indonesian translations';
+    }
+}
+
+function updateTranslationVisibility() {
+    const allTranslations = document.querySelectorAll('.translation');
+    allTranslations.forEach(translation => {
+        translation.style.display = translationsVisible ? 'block' : 'none';
+    });
+}
+
+// AI Vocabulary Suggestions Functions
+function initializeAISuggestions() {
+    const newWordInput = document.getElementById('newWord');
+    if (!newWordInput) return;
+    
+    let debounceTimer;
+    newWordInput.addEventListener('input', function(e) {
+        clearTimeout(debounceTimer);
+        const word = e.target.value.trim();
+        
+        if (word.length >= 3) {
+            debounceTimer = setTimeout(() => {
+                generateVocabularysuggestions(word);
+            }, 800); // Wait for user to stop typing
+        } else {
+            hideAISuggestions();
+        }
+    });
+}
+
+function generateVocabularysuggestions(word) {
+    const suggestionsPanel = document.getElementById('aiSuggestions');
+    const suggestionsContent = document.getElementById('suggestionsContent');
+    
+    if (!suggestionsPanel || !suggestionsContent) return;
+    
+    // Show loading state
+    suggestionsContent.innerHTML = '<div class="ai-loading">Generating smart suggestions...</div>';
+    suggestionsPanel.style.display = 'block';
+    
+    // Simulate AI processing delay
+    setTimeout(() => {
+        const suggestions = getSmartVocabularySuggestions(word.toLowerCase());
+        displayVocabularySuggestions(suggestions, word);
+    }, 1000);
+}
+
+function getSmartVocabularySuggestions(word) {
+    // Advanced vocabulary suggestion database
+    const vocabularyDB = {
+        // Academic & Professional
+        'resilience': {
+            synonyms: ['perseverance', 'tenacity', 'endurance', 'fortitude', 'grit'],
+            antonyms: ['fragility', 'weakness', 'vulnerability'],
+            related: ['strength', 'determination', 'persistence', 'courage'],
+            examples: [
+                'Her resilience helped her overcome every challenge.',
+                'Building resilience is key to personal growth.',
+                'The team showed remarkable resilience during the crisis.'
+            ]
+        },
+        'sincere': {
+            synonyms: ['genuine', 'honest', 'authentic', 'heartfelt', 'earnest'],
+            antonyms: ['fake', 'insincere', 'dishonest', 'artificial'],
+            related: ['truthful', 'candid', 'frank', 'direct'],
+            examples: [
+                'She gave a sincere apology for her mistake.',
+                'His sincere smile made everyone feel welcome.',
+                'We appreciate your sincere effort in this project.'
+            ]
+        },
+        'perseverance': {
+            synonyms: ['persistence', 'determination', 'tenacity', 'steadfastness'],
+            antonyms: ['surrender', 'abandonment', 'quitting'],
+            related: ['patience', 'endurance', 'commitment', 'dedication'],
+            examples: [
+                'Success requires perseverance and hard work.',
+                'Her perseverance paid off when she got the promotion.',
+                'Through perseverance, he mastered the difficult skill.'
+            ]
+        },
+        'ambitious': {
+            synonyms: ['determined', 'driven', 'aspiring', 'goal-oriented'],
+            antonyms: ['lazy', 'unmotivated', 'complacent'],
+            related: ['motivated', 'focused', 'dedicated', 'hardworking'],
+            examples: [
+                'She is ambitious and always strives for excellence.',
+                'His ambitious goals inspire the entire team.',
+                'Ambitious people often achieve great things.'
+            ]
+        },
+        'creative': {
+            synonyms: ['innovative', 'imaginative', 'artistic', 'inventive'],
+            antonyms: ['unimaginative', 'conventional', 'mundane'],
+            related: ['original', 'unique', 'inspired', 'resourceful'],
+            examples: [
+                'Her creative solution saved the company money.',
+                'Creative thinking leads to breakthrough innovations.',
+                'The creative team designed an amazing campaign.'
+            ]
+        },
+        'confident': {
+            synonyms: ['self-assured', 'bold', 'certain', 'poised'],
+            antonyms: ['insecure', 'doubtful', 'uncertain', 'timid'],
+            related: ['brave', 'fearless', 'assertive', 'optimistic'],
+            examples: [
+                'She spoke with confident authority at the meeting.',
+                'Confident people inspire trust in others.',
+                'His confident presentation impressed the clients.'
+            ]
+        },
+        'dedicated': {
+            synonyms: ['committed', 'devoted', 'loyal', 'focused'],
+            antonyms: ['uncommitted', 'indifferent', 'careless'],
+            related: ['passionate', 'hardworking', 'responsible', 'reliable'],
+            examples: [
+                'She is dedicated to helping her students succeed.',
+                'Dedicated employees often get promoted quickly.',
+                'His dedicated approach to work is admirable.'
+            ]
+        }
+    };
+    
+    // Check if we have specific data for this word
+    if (vocabularyDB[word]) {
+        return vocabularyDB[word];
+    }
+    
+    // Generate contextual suggestions based on word patterns
+    return generateContextualSuggestions(word);
+}
+
+function generateContextualSuggestions(word) {
+    // Smart pattern-based suggestions
+    const patterns = {
+        // Words ending in -tion
+        'tion$': {
+            related: ['process', 'action', 'method', 'procedure'],
+            examples: [`The ${word} requires careful planning.`, `Understanding ${word} is important.`]
+        },
+        // Words ending in -ness
+        'ness$': {
+            related: ['quality', 'characteristic', 'trait', 'attribute'],
+            examples: [`Her ${word} impressed everyone.`, `${word} is a valuable quality.`]
+        },
+        // Words ending in -ly (adverbs)
+        'ly$': {
+            related: ['manner', 'way', 'style', 'approach'],
+            examples: [`She worked ${word} on the project.`, `He spoke ${word} to the audience.`]
+        },
+        // Words ending in -able
+        'able$': {
+            related: ['capable', 'possible', 'feasible', 'practical'],
+            examples: [`The solution is ${word} and effective.`, `This approach is ${word} for our needs.`]
+        }
+    };
+    
+    // Find matching patterns
+    for (const [pattern, data] of Object.entries(patterns)) {
+        if (new RegExp(pattern).test(word)) {
+            return {
+                synonyms: [],
+                antonyms: [],
+                related: data.related,
+                examples: data.examples
+            };
+        }
+    }
+    
+    // Default general suggestions
+    return {
+        synonyms: [],
+        antonyms: [],
+        related: ['concept', 'idea', 'term', 'meaning'],
+        examples: [
+            `Learning the word "${word}" expands your vocabulary.`,
+            `Understanding "${word}" helps in communication.`,
+            `The word "${word}" can be used in various contexts.`
+        ]
+    };
+}
+
+function displayVocabularySuggestions(suggestions, originalWord) {
+    const suggestionsContent = document.getElementById('suggestionsContent');
+    if (!suggestionsContent) return;
+    
+    let html = '';
+    
+    // Synonyms section
+    if (suggestions.synonyms && suggestions.synonyms.length > 0) {
+        html += `
+            <div class="suggestion-section">
+                <h5>📝 Synonyms (Similar Words)</h5>
+                <div class="suggestion-items">
+                    ${suggestions.synonyms.map(word => 
+                        `<button class="suggestion-item" onclick="useSuggestion('${word}')">${word}</button>`
+                    ).join('')}
+                </div>
+            </div>
+        `;
+    }
+    
+    // Antonyms section
+    if (suggestions.antonyms && suggestions.antonyms.length > 0) {
+        html += `
+            <div class="suggestion-section">
+                <h5>🔄 Antonyms (Opposite Words)</h5>
+                <div class="suggestion-items">
+                    ${suggestions.antonyms.map(word => 
+                        `<button class="suggestion-item" onclick="useSuggestion('${word}')">${word}</button>`
+                    ).join('')}
+                </div>
+            </div>
+        `;
+    }
+    
+    // Related words section
+    if (suggestions.related && suggestions.related.length > 0) {
+        html += `
+            <div class="suggestion-section">
+                <h5>🔗 Related Words</h5>
+                <div class="suggestion-items">
+                    ${suggestions.related.map(word => 
+                        `<button class="suggestion-item" onclick="useSuggestion('${word}')">${word}</button>`
+                    ).join('')}
+                </div>
+            </div>
+        `;
+    }
+    
+    // Example sentences section
+    if (suggestions.examples && suggestions.examples.length > 0) {
+        html += `
+            <div class="suggestion-section">
+                <h5>💡 Example Sentences</h5>
+                ${suggestions.examples.map(example => 
+                    `<div class="example-sentence" onclick="useExampleSentence('${example.replace(/'/g, "\\\'")}')">${example}</div>`
+                ).join('')}
+            </div>
+        `;
+    }
+    
+    if (html) {
+        suggestionsContent.innerHTML = html;
+    } else {
+        suggestionsContent.innerHTML = `
+            <div class="suggestion-section">
+                <h5>🤖 AI Learning Tips</h5>
+                <p>Try words like "creative", "confident", "dedicated", or "resilience" for rich suggestions!</p>
+                <p>The AI learns better with common English words.</p>
+            </div>
+        `;
+    }
+}
+
+function useSuggestion(word) {
+    const newWordInput = document.getElementById('newWord');
+    if (newWordInput) {
+        newWordInput.value = word;
+        newWordInput.focus();
+        
+        // Trigger suggestions for the new word
+        setTimeout(() => {
+            generateVocabularysuggestions(word);
+        }, 500);
+        
+        showNotification(`Suggested word "${word}" selected!`, 'success', '🤖');
+    }
+}
+
+function useExampleSentence(sentence) {
+    // Copy to clipboard
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(sentence).then(() => {
+            showNotification('Example sentence copied! Paste it in sentences section.', 'success', '📋');
+        });
+    } else {
+        showNotification('Click on sentences section to add this example!', 'success', '💡');
+    }
+    
+    // Smooth scroll to sentences section
+    const sentencesSection = document.getElementById('sentences');
+    if (sentencesSection) {
+        setTimeout(() => {
+            sentencesSection.scrollIntoView({ behavior: 'smooth' });
+        }, 1000);
+    }
+}
+
+function hideAISuggestions() {
+    const suggestionsPanel = document.getElementById('aiSuggestions');
+    if (suggestionsPanel) {
+        suggestionsPanel.style.display = 'none';
+    }
+}
+
+// Form Toggle Functions
+function initializeFormToggles() {
+    // Vocabulary form toggle
+    const vocabToggle = document.getElementById('toggleVocabForm');
+    const vocabForm = document.getElementById('vocabForm');
+    
+    if (vocabToggle && vocabForm) {
+        vocabToggle.addEventListener('click', function() {
+            const isVisible = vocabForm.style.display !== 'none';
+            
+            if (isVisible) {
+                // Hide form
+                vocabForm.style.display = 'none';
+                vocabToggle.classList.remove('active');
+                hideAISuggestions();
+            } else {
+                // Show form
+                vocabForm.style.display = 'block';
+                vocabToggle.classList.add('active');
+                
+                // Focus on first input
+                const wordInput = document.getElementById('newWord');
+                if (wordInput) {
+                    setTimeout(() => wordInput.focus(), 100);
+                }
+            }
+        });
+    }
+    
+    // Sentence form toggle
+    const sentenceToggle = document.getElementById('toggleSentenceForm');
+    const sentenceForm = document.getElementById('sentenceForm');
+    
+    if (sentenceToggle && sentenceForm) {
+        sentenceToggle.addEventListener('click', function() {
+            const isVisible = sentenceForm.style.display !== 'none';
+            
+            if (isVisible) {
+                // Hide form
+                sentenceForm.style.display = 'none';
+                sentenceToggle.classList.remove('active');
+            } else {
+                // Show form
+                sentenceForm.style.display = 'block';
+                sentenceToggle.classList.add('active');
+                
+                // Focus on first textarea
+                const sentenceInput = document.getElementById('newSentence');
+                if (sentenceInput) {
+                    setTimeout(() => sentenceInput.focus(), 100);
+                }
+            }
+        });
+    }
+}

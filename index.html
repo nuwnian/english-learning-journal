@@ -2,36 +2,69 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Yulfa's English Notes</title>
   <link rel="stylesheet" href="style.css" />
   <link rel="icon" href="favicon.ico" type="image/x-icon">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Quicksand:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Quicksand:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
   <header>
     <h1>📘 Yulfa's English Learning Note</h1>
+    <div class="search-container">
+      <input type="text" id="searchInput" placeholder="🔍 Search vocabulary, sentences, or grammar..." />
+      <div id="searchResults" class="search-results"></div>
+    </div>
   </header>
   <nav>
     <a href="#vocab">Vocabulary</a>
     <a href="#grammar">Grammar</a>
     <a href="#sentences">Sentences</a>
+    <div class="nav-extras">
+      <button id="translationToggle" class="translation-toggle-btn">🇮🇩 ID</button>
+      <button id="clearSearch" class="clear-search-btn" style="display: none;">Clear Search</button>
+      <span id="searchCount" class="search-count"></span>
+    </div>
   </nav>
   <main>
     <section id="vocab">
-      <h2>📖 Vocabulary</h2>
+      <h2>📖 Vocabulary 
+        <button id="toggleVocabForm" class="toggle-form-btn" title="Add new vocabulary">➕</button>
+      </h2>
       
       <!-- Form to add new vocabulary -->
-      <div class="add-vocab-form">
+      <div class="add-vocab-form" id="vocabForm" style="display: none;">
         <h3>➕ Add New Word</h3>
         <input type="text" id="newWord" placeholder="Enter new word..." />
         <input type="text" id="newDefinition" placeholder="Enter definition..." />
+        <input type="text" id="newWordID" placeholder="Kata dalam Bahasa Indonesia..." />
+        <input type="text" id="newDefinitionID" placeholder="Arti dalam Bahasa Indonesia..." />
         <button onclick="addNewVocab()">Add Word</button>
+        
+        <!-- AI Suggestions Panel -->
+        <div id="aiSuggestions" class="ai-suggestions" style="display: none;">
+          <h4>🤖 AI Vocabulary Assistant</h4>
+          <div id="suggestionsContent"></div>
+        </div>
       </div>
       
       <ul>
-        <li><strong>Resilience</strong> – the ability to recover quickly from difficulties.</li>
-        <li><strong>Sincere</strong> – genuine; without pretense.</li>
+        <li>
+          <div class="vocab-item-content">
+            <strong>Resilience</strong> – the ability to recover quickly from difficulties.
+            <div class="translation" style="display: none;">
+              <strong>Ketahanan</strong> – kemampuan untuk pulih dengan cepat dari kesulitan.
+            </div>
+          </div>
+        </li>
+        <li>
+          <div class="vocab-item-content">
+            <strong>Sincere</strong> – genuine; without pretense.
+            <div class="translation" style="display: none;">
+              <strong>Tulus</strong> – asli; tanpa kepura-puraan.
+            </div>
+          </div>
+        </li>
       </ul>
     </section>
 
@@ -39,23 +72,42 @@
       <h2>📚 Grammar</h2>
       <h3>Present Perfect</h3>
       <p><strong>Structure:</strong> Subject + have/has + past participle</p>
+      <div class="translation" style="display: none;">
+        <p><strong>Struktur:</strong> Subjek + have/has + past participle</p>
+      </div>
       <p><strong>Example:</strong> I have learned many new words today.</p>
+      <div class="translation" style="display: none;">
+        <p><strong>Contoh:</strong> Saya telah mempelajari banyak kata baru hari ini.</p>
+      </div>
     </section>
 
     <section id="sentences">
-      <h2>✍️ Sentence Collection</h2>
+      <h2>✍️ Sentence Collection 
+        <button id="toggleSentenceForm" class="toggle-form-btn" title="Add new sentence">➕</button>
+      </h2>
       
       <!-- Form to add new sentence -->
-      <div class="add-sentence-form">
+      <div class="add-sentence-form" id="sentenceForm" style="display: none;">
         <h3>📝 Add New Sentence</h3>
         <textarea id="newSentence" placeholder="Enter a new sentence or quote..." rows="3"></textarea>
+        <textarea id="newSentenceID" placeholder="Terjemahan dalam Bahasa Indonesia..." rows="2"></textarea>
         <input type="text" id="sentenceAuthor" placeholder="Author (optional)..." />
         <button onclick="addNewSentence()">Add Sentence</button>
       </div>
       
       <div class="sentence-list">
-        <p>"The only way to do great work is to love what you do." – Steve Jobs</p>
-        <p>"Success is not final, failure is not fatal: It is the courage to continue that counts." – Winston Churchill</p>
+        <div class="sentence-item-content">
+          <p>"The only way to do great work is to love what you do." – Steve Jobs</p>
+          <div class="translation" style="display: none;">
+            <p>"Satu-satunya cara untuk melakukan pekerjaan hebat adalah mencintai apa yang kamu lakukan." – Steve Jobs</p>
+          </div>
+        </div>
+        <div class="sentence-item-content">
+          <p>"Success is not final, failure is not fatal: It is the courage to continue that counts." – Winston Churchill</p>
+          <div class="translation" style="display: none;">
+            <p>"Kesuksesan bukanlah final, kegagalan bukanlah fatal: Yang penting adalah keberanian untuk melanjutkan." – Winston Churchill</p>
+          </div>
+        </div>
       </div>
     </section>
   </main>
