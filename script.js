@@ -13,6 +13,10 @@ let translationsVisible = false;
 
 // AI Suggestions state
 let aiSuggestionsEnabled = true;
+let geminiApiKey = ''; // Will be set by user
+
+// Google Gemini AI Configuration
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent';
 
 // Debug: Check what's in localStorage
 console.log('Saved vocabulary:', savedVocab);
@@ -1113,6 +1117,13 @@ function updateTranslationVisibility() {
 
 // AI Vocabulary Suggestions Functions
 function initializeAISuggestions() {
+    // Load saved API key
+    const savedApiKey = localStorage.getItem('geminiApiKey');
+    if (savedApiKey) {
+        geminiApiKey = savedApiKey;
+        console.log('✅ Gemini API key loaded - Real AI active!');
+    }
+    
     const newWordInput = document.getElementById('newWord');
     if (!newWordInput) return;
     
@@ -1123,7 +1134,7 @@ function initializeAISuggestions() {
         
         if (word.length >= 3) {
             debounceTimer = setTimeout(() => {
-                generateVocabularysuggestions(word);
+                generateVocabularySuggestions(word);
             }, 800); // Wait for user to stop typing
         } else {
             hideAISuggestions();
@@ -1131,27 +1142,217 @@ function initializeAISuggestions() {
     });
 }
 
-function generateVocabularysuggestions(word) {
+function generateVocabularySuggestions(word) {
     const suggestionsPanel = document.getElementById('aiSuggestions');
     const suggestionsContent = document.getElementById('suggestionsContent');
     
     if (!suggestionsPanel || !suggestionsContent) return;
     
+    // Check if API key is set
+    if (!geminiApiKey) {
+        showApiKeyPrompt();
+        return;
+    }
+    
     // Show loading state
-    suggestionsContent.innerHTML = '<div class="ai-loading">Generating smart suggestions...</div>';
+    suggestionsContent.innerHTML = '<div class="ai-loading">🤖 AI is thinking...</div>';
     suggestionsPanel.style.display = 'block';
     
-    // Simulate AI processing delay
-    setTimeout(() => {
-        const suggestions = getSmartVocabularySuggestions(word.toLowerCase());
-        displayVocabularySuggestions(suggestions, word);
-    }, 1000);
+    // Call real Google Gemini AI
+    callGeminiAI(word);
 }
 
-function getSmartVocabularySuggestions(word) {
-    // Advanced vocabulary suggestion database
+async function callGeminiAI(word) {
+    const suggestionsContent = document.getElementById('suggestionsContent');
+    
+    try {
+        const prompt = `Help me learn the English word or phrase "${word}". Give me a JSON response with this exact format (no extra text):
+
+{
+  "synonyms": ["word1", "word2", "word3"],
+  "antonyms": ["word1", "word2", "word3"], 
+  "related": ["word1", "word2", "word3"],
+  "examples": ["Example sentence 1", "Example sentence 2", "Example sentence 3"]
+}
+
+Important:
+- Only return valid JSON, nothing else
+- Use simple, common English words
+- Make examples realistic and natural
+- If it's a phrase, treat it as one unit`;
+
+        console.log('🔄 Calling Gemini AI for:', word);
+        
+        const requestBody = {
+            contents: [{
+                parts: [{
+                    text: prompt
+                }]
+            }],
+            generationConfig: {
+                temperature: 0.3,
+                maxOutputTokens: 400,
+                topP: 1,
+                topK: 32
+            }
+        };
+
+        console.log('📤 Request body:', requestBody);
+
+        const response = await fetch(`${GEMINI_API_URL}?key=${geminiApiKey}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(requestBody)
+        });
+
+        console.log('📥 Response status:', response.status);
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ API Error Response:', errorText);
+            throw new Error(`API Error ${response.status}: ${errorText}`);
+        }
+
+        const data = await response.json();
+        console.log('📋 AI Response data:', data);
+
+        if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
+            throw new Error('Invalid response format from AI');
+        }
+
+        const aiResponse = data.candidates[0].content.parts[0].text;
+        console.log('🤖 AI Raw Response:', aiResponse);
+
+        // Clean and parse the JSON response
+        let cleanResponse = aiResponse.trim();
+        
+        // Remove any markdown code blocks if present
+        cleanResponse = cleanResponse.replace(/```json\s*|\s*```/g, '');
+        cleanResponse = cleanResponse.replace(/```\s*|\s*```/g, '');
+        
+        // Find JSON object in the response
+        const jsonStart = cleanResponse.indexOf('{');
+        const jsonEnd = cleanResponse.lastIndexOf('}') + 1;
+        
+        if (jsonStart >= 0 && jsonEnd > jsonStart) {
+            cleanResponse = cleanResponse.substring(jsonStart, jsonEnd);
+        }
+
+        console.log('🧹 Cleaned Response:', cleanResponse);
+
+        const suggestions = JSON.parse(cleanResponse);
+        console.log('✅ Parsed Suggestions:', suggestions);
+        
+        displayVocabularySuggestions(suggestions, word);
+        
+    } catch (error) {
+        console.error('❌ Gemini AI Error:', error);
+        
+        // Show detailed error information
+        let errorMessage = 'Unknown error occurred';
+        if (error.message.includes('API Error 400')) {
+            errorMessage = 'Invalid API request. Please check your API key.';
+        } else if (error.message.includes('API Error 403')) {
+            errorMessage = 'API key is invalid or expired. Please update it.';
+        } else if (error.message.includes('API Error 429')) {
+            errorMessage = 'Too many requests. Please wait a moment and try again.';
+        } else if (error.message.includes('Failed to fetch')) {
+            errorMessage = 'Network error. Please check your internet connection.';
+        } else if (error.message.includes('JSON')) {
+            errorMessage = 'AI response format error. Using fallback suggestions.';
+        }
+        
+        suggestionsContent.innerHTML = `
+            <div class="ai-error">
+                <h5>🚫 AI Error</h5>
+                <p><strong>Error:</strong> ${errorMessage}</p>
+                <p><small>Technical details: ${error.message}</small></p>
+                <div class="error-actions">
+                    <button onclick="retryAI('${word}')" class="retry-btn">🔄 Try Again</button>
+                    <button onclick="useFallbackSuggestions('${word}')" class="fallback-btn">📝 Use Basic Mode</button>
+                    <button onclick="showApiKeyPrompt()" class="api-key-btn">🔑 Update API Key</button>
+                </div>
+            </div>
+        `;
+    }
+}
+
+function showApiKeyPrompt() {
+    const modal = document.createElement('div');
+    modal.className = 'api-key-modal';
+    modal.innerHTML = `
+        <div class="api-key-dialog">
+            <h3>🔑 Google Gemini API Key Required</h3>
+            <p>To use real AI vocabulary suggestions, you need a FREE Google Gemini API key:</p>
+            
+            <ol>
+                <li>Go to <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a></li>
+                <li>Click "Create API Key"</li>
+                <li>Copy the key and paste it below</li>
+            </ol>
+            
+            <input type="password" id="apiKeyInput" placeholder="Paste your API key here..." />
+            <div class="api-key-actions">
+                <button onclick="saveApiKey()">Save & Use AI</button>
+                <button onclick="closeApiKeyModal()">Cancel</button>
+                <button onclick="useFallbackMode()">Use Without AI</button>
+            </div>
+            
+            <small>✅ Your API key is stored locally and never shared</small>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+}
+
+function saveApiKey() {
+    const apiKeyInput = document.getElementById('apiKeyInput');
+    const key = apiKeyInput.value.trim();
+    
+    if (key) {
+        geminiApiKey = key;
+        localStorage.setItem('geminiApiKey', key);
+        closeApiKeyModal();
+        showNotification('API Key saved! AI is now active 🤖', 'success');
+    } else {
+        showNotification('Please enter a valid API key', 'error');
+    }
+}
+
+function closeApiKeyModal() {
+    const modal = document.querySelector('.api-key-modal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+function useFallbackMode() {
+    closeApiKeyModal();
+    showNotification('Using basic suggestions without AI', 'info');
+    // Use the old system as fallback
+    const word = document.getElementById('newWord').value;
+    if (word) {
+        const suggestions = getLocalVocabularySuggestions(word);
+        displayVocabularySuggestions(suggestions, word);
+    }
+}
+
+function getLocalVocabularySuggestions(word) {
+    // Fallback vocabulary suggestion database (used when AI is not available)
     const vocabularyDB = {
-        // Phrases and phrasal verbs
+        // Common words for fallback
+        'forget': {
+            synonyms: ['overlook', 'neglect', 'omit', 'ignore'],
+            antonyms: ['remember', 'recall', 'recollect', 'retain'],
+            related: ['memory', 'recall', 'mind', 'think'],
+            examples: [
+                'Don\'t forget to call your mother.',
+                'I always forget where I put my keys.',
+                'Please don\'t forget our meeting tomorrow.'
+            ]
+        },
         'calm down': {
             synonyms: ['relax', 'chill out', 'settle down', 'take it easy'],
             antonyms: ['get worked up', 'panic', 'lose control', 'freak out'],
@@ -1160,107 +1361,6 @@ function getSmartVocabularySuggestions(word) {
                 'Calm down, everything will be alright.',
                 'I need to calm down before the presentation.',
                 'Please calm down and tell me what happened.'
-            ]
-        },
-        'give up': {
-            synonyms: ['quit', 'surrender', 'abandon', 'stop trying'],
-            antonyms: ['persist', 'continue', 'keep going', 'persevere'],
-            related: ['quit', 'stop', 'abandon', 'surrender'],
-            examples: [
-                'Never give up on your dreams.',
-                'Don\'t give up when things get tough.',
-                'She refused to give up despite the challenges.'
-            ]
-        },
-        'look forward': {
-            synonyms: ['anticipate', 'expect', 'await', 'be excited about'],
-            antonyms: ['dread', 'fear', 'worry about'],
-            related: ['hope', 'expect', 'anticipate', 'await'],
-            examples: [
-                'I look forward to meeting you tomorrow.',
-                'We look forward to the vacation next month.',
-                'Students look forward to summer break.'
-            ]
-        },
-        // Single words
-        'calm': {
-            synonyms: ['peaceful', 'serene', 'tranquil', 'composed'],
-            antonyms: ['agitated', 'anxious', 'frantic', 'restless'],
-            related: ['relax', 'soothe', 'quiet', 'still'],
-            examples: [
-                'Stay calm during stressful situations.',
-                'The calm ocean reflected the sunset beautifully.',
-                'She remained calm despite the chaos around her.'
-            ]
-        },
-        'resilience': {
-            synonyms: ['perseverance', 'tenacity', 'endurance', 'fortitude', 'grit'],
-            antonyms: ['fragility', 'weakness', 'vulnerability'],
-            related: ['strength', 'determination', 'persistence', 'courage'],
-            examples: [
-                'Her resilience helped her overcome every challenge.',
-                'Building resilience is key to personal growth.',
-                'The team showed remarkable resilience during the crisis.'
-            ]
-        },
-        'sincere': {
-            synonyms: ['genuine', 'honest', 'authentic', 'heartfelt', 'earnest'],
-            antonyms: ['fake', 'insincere', 'dishonest', 'artificial'],
-            related: ['truthful', 'candid', 'frank', 'direct'],
-            examples: [
-                'She gave a sincere apology for her mistake.',
-                'His sincere smile made everyone feel welcome.',
-                'We appreciate your sincere effort in this project.'
-            ]
-        },
-        'perseverance': {
-            synonyms: ['persistence', 'determination', 'tenacity', 'steadfastness'],
-            antonyms: ['surrender', 'abandonment', 'quitting'],
-            related: ['patience', 'endurance', 'commitment', 'dedication'],
-            examples: [
-                'Success requires perseverance and hard work.',
-                'Her perseverance paid off when she got the promotion.',
-                'Through perseverance, he mastered the difficult skill.'
-            ]
-        },
-        'ambitious': {
-            synonyms: ['determined', 'driven', 'aspiring', 'goal-oriented'],
-            antonyms: ['lazy', 'unmotivated', 'complacent'],
-            related: ['motivated', 'focused', 'dedicated', 'hardworking'],
-            examples: [
-                'She is ambitious and always strives for excellence.',
-                'His ambitious goals inspire the entire team.',
-                'Ambitious people often achieve great things.'
-            ]
-        },
-        'creative': {
-            synonyms: ['innovative', 'imaginative', 'artistic', 'inventive'],
-            antonyms: ['unimaginative', 'conventional', 'mundane'],
-            related: ['original', 'unique', 'inspired', 'resourceful'],
-            examples: [
-                'Her creative solution saved the company money.',
-                'Creative thinking leads to breakthrough innovations.',
-                'The creative team designed an amazing campaign.'
-            ]
-        },
-        'confident': {
-            synonyms: ['self-assured', 'bold', 'certain', 'poised'],
-            antonyms: ['insecure', 'doubtful', 'uncertain', 'timid'],
-            related: ['brave', 'fearless', 'assertive', 'optimistic'],
-            examples: [
-                'She spoke with confident authority at the meeting.',
-                'Confident people inspire trust in others.',
-                'His confident presentation impressed the clients.'
-            ]
-        },
-        'dedicated': {
-            synonyms: ['committed', 'devoted', 'loyal', 'focused'],
-            antonyms: ['uncommitted', 'indifferent', 'careless'],
-            related: ['passionate', 'hardworking', 'responsible', 'reliable'],
-            examples: [
-                'She is dedicated to helping her students succeed.',
-                'Dedicated employees often get promoted quickly.',
-                'His dedicated approach to work is admirable.'
             ]
         }
     };
@@ -1271,8 +1371,32 @@ function getSmartVocabularySuggestions(word) {
         return vocabularyDB[searchTerm];
     }
     
-    // Generate contextual suggestions based on word patterns
-    return generateContextualSuggestions(word);
+    // Generate basic suggestions based on word patterns
+    return generateBasicSuggestions(word);
+}
+
+function generateBasicSuggestions(word) {
+    // Basic pattern-based suggestions as fallback
+    return {
+        synonyms: ['similar word', 'related term', 'equivalent'],
+        antonyms: ['opposite word', 'contrary term'],
+        related: ['connected word', 'associated term', 'linked concept'],
+        examples: [
+            `I need to understand the word "${word}" better.`,
+            `The meaning of "${word}" is important to learn.`,
+            `Using "${word}" in context helps with learning.`
+        ]
+    };
+}
+
+function useFallbackSuggestions(word) {
+    const suggestions = getLocalVocabularySuggestions(word);
+    displayVocabularySuggestions(suggestions, word);
+}
+
+function retryAI(word) {
+    console.log('🔄 Retrying AI for word:', word);
+    generateVocabularySuggestions(word);
 }
 
 function generateContextualSuggestions(word) {
@@ -1406,7 +1530,7 @@ function useSuggestion(word) {
         
         // Trigger suggestions for the new word
         setTimeout(() => {
-            generateVocabularysuggestions(word);
+            generateVocabularySuggestions(word);
         }, 500);
         
         showNotification(`Suggested word "${word}" selected!`, 'success', '🤖');

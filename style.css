@@ -347,8 +347,8 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 1rem;
-      margin: 0.75rem 0;
+      padding: 0.6rem 1rem;
+      margin: 0.4rem 0;
       border-radius: 12px;
       background: linear-gradient(135deg, #F8F9FA 0%, #FFFFFF 100%);
       border: 1px solid rgba(107, 115, 255, 0.1);
@@ -1199,4 +1199,190 @@
       button:active {
         transform: scale(0.95);
       }
+    }
+
+    /* API Key Modal Styles */
+    .api-key-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+      backdrop-filter: blur(5px);
+    }
+
+    .api-key-dialog {
+      background: white;
+      padding: 2rem;
+      border-radius: 15px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 500px;
+      width: 90%;
+      animation: modalSlideIn 0.3s ease;
+    }
+
+    @keyframes modalSlideIn {
+      from {
+        transform: translateY(-50px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    .api-key-dialog h3 {
+      color: #6B73FF;
+      margin-bottom: 1rem;
+      font-size: 1.4rem;
+    }
+
+    .api-key-dialog p {
+      color: #666;
+      margin-bottom: 1rem;
+      line-height: 1.6;
+    }
+
+    .api-key-dialog ol {
+      color: #666;
+      margin-bottom: 1.5rem;
+      padding-left: 1.5rem;
+    }
+
+    .api-key-dialog ol li {
+      margin-bottom: 0.5rem;
+    }
+
+    .api-key-dialog a {
+      color: #6B73FF;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .api-key-dialog a:hover {
+      text-decoration: underline;
+    }
+
+    .api-key-dialog input {
+      width: 100%;
+      padding: 0.8rem;
+      border: 2px solid #E0E0E0;
+      border-radius: 8px;
+      font-size: 1rem;
+      margin-bottom: 1.5rem;
+      font-family: 'Quicksand', sans-serif;
+    }
+
+    .api-key-dialog input:focus {
+      outline: none;
+      border-color: #6B73FF;
+      box-shadow: 0 0 0 3px rgba(107, 115, 255, 0.1);
+    }
+
+    .api-key-actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+
+    .api-key-actions button {
+      padding: 0.6rem 1.2rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: 'Quicksand', sans-serif;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      flex: 1;
+      min-width: 120px;
+    }
+
+    .api-key-actions button:first-child {
+      background: linear-gradient(135deg, #6B73FF 0%, #5A67D8 100%);
+      color: white;
+    }
+
+    .api-key-actions button:first-child:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(107, 115, 255, 0.3);
+    }
+
+    .api-key-actions button:nth-child(2) {
+      background: #f8f9fa;
+      color: #666;
+      border: 1px solid #ddd;
+    }
+
+    .api-key-actions button:nth-child(3) {
+      background: linear-gradient(135deg, #FFC107 0%, #FFB300 100%);
+      color: white;
+    }
+
+    .api-key-dialog small {
+      color: #28a745;
+      font-weight: 500;
+    }
+
+    /* AI Error Styles */
+    .ai-error {
+      text-align: center;
+      padding: 1rem;
+    }
+
+    .ai-error h5 {
+      color: #dc3545;
+      margin-bottom: 0.5rem;
+    }
+
+    .ai-error p {
+      color: #666;
+      margin-bottom: 1rem;
+    }
+
+    .ai-error small {
+      font-size: 0.8rem;
+      color: #999;
+      display: block;
+      margin-top: 0.5rem;
+    }
+
+    .error-actions {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 1rem;
+    }
+
+    .retry-btn, .fallback-btn, .api-key-btn {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: 'Quicksand', sans-serif;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      font-size: 0.9rem;
+    }
+
+    .retry-btn {
+      background: linear-gradient(135deg, #6B73FF 0%, #5A67D8 100%);
+      color: white;
+    }
+
+    .fallback-btn {
+      background: linear-gradient(135deg, #FFC107 0%, #FFB300 100%);
+      color: white;
+    }
+
+    .api-key-btn {
+      background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+      color: white;
     }
