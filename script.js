@@ -115,6 +115,177 @@ function hideConfirmDialog(overlay) {
     }, 300);
 }
 
+// Custom edit dialog function
+function showEditDialog(title, currentWord, currentDefinition, icon = '📝') {
+    return new Promise((resolve, reject) => {
+        // Remove any existing edit dialogs
+        const existingDialogs = document.querySelectorAll('.edit-overlay');
+        existingDialogs.forEach(dialog => dialog.remove());
+        
+        // Create overlay
+        const overlay = document.createElement('div');
+        overlay.className = 'edit-overlay';
+        overlay.innerHTML = `
+            <div class="edit-dialog">
+                <div class="edit-header">
+                    <span class="edit-icon">${icon}</span>
+                    <h3>${title}</h3>
+                </div>
+                <div class="edit-content">
+                    <div class="edit-field">
+                        <label>Word:</label>
+                        <input type="text" id="editWord" value="${currentWord}" placeholder="Enter word...">
+                    </div>
+                    <div class="edit-field">
+                        <label>Definition:</label>
+                        <input type="text" id="editDefinition" value="${currentDefinition}" placeholder="Enter definition...">
+                    </div>
+                </div>
+                <div class="edit-buttons">
+                    <button class="edit-btn cancel">Cancel</button>
+                    <button class="edit-btn save">Save Changes</button>
+                </div>
+            </div>
+        `;
+        
+        // Add event listeners
+        overlay.querySelector('.cancel').onclick = () => {
+            hideEditDialog(overlay);
+            resolve(null);
+        };
+        
+        overlay.querySelector('.save').onclick = () => {
+            const newWord = document.getElementById('editWord').value.trim();
+            const newDefinition = document.getElementById('editDefinition').value.trim();
+            
+            if (newWord && newDefinition) {
+                hideEditDialog(overlay);
+                resolve({ word: newWord, definition: newDefinition });
+            } else {
+                // Show validation error
+                showNotification('Please fill in both fields!', 'error', '⚠️');
+            }
+        };
+        
+        // Close on overlay click
+        overlay.onclick = (e) => {
+            if (e.target === overlay) {
+                hideEditDialog(overlay);
+                resolve(null);
+            }
+        };
+        
+        // Handle Enter key to save
+        overlay.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                overlay.querySelector('.save').click();
+            } else if (e.key === 'Escape') {
+                overlay.querySelector('.cancel').click();
+            }
+        });
+        
+        // Add to page and show
+        document.body.appendChild(overlay);
+        
+        // Focus on first input
+        setTimeout(() => {
+            document.getElementById('editWord').focus();
+            document.getElementById('editWord').select();
+        }, 100);
+    });
+}
+
+// Function to hide edit dialog
+function hideEditDialog(overlay) {
+    overlay.classList.add('fade-out');
+    setTimeout(() => {
+        if (overlay.parentNode) {
+            overlay.remove();
+        }
+    }, 300);
+}
+
+// Custom sentence edit dialog function
+function showSentenceEditDialog(title, currentText, currentAuthor = '', icon = '📝') {
+    return new Promise((resolve, reject) => {
+        // Remove any existing edit dialogs
+        const existingDialogs = document.querySelectorAll('.edit-overlay');
+        existingDialogs.forEach(dialog => dialog.remove());
+        
+        // Create overlay
+        const overlay = document.createElement('div');
+        overlay.className = 'edit-overlay';
+        overlay.innerHTML = `
+            <div class="edit-dialog">
+                <div class="edit-header">
+                    <span class="edit-icon">${icon}</span>
+                    <h3>${title}</h3>
+                </div>
+                <div class="edit-content">
+                    <div class="edit-field">
+                        <label>Sentence:</label>
+                        <textarea id="editSentenceText" rows="3" placeholder="Enter sentence...">${currentText}</textarea>
+                    </div>
+                    <div class="edit-field">
+                        <label>Author (optional):</label>
+                        <input type="text" id="editSentenceAuthor" value="${currentAuthor}" placeholder="Enter author name...">
+                    </div>
+                </div>
+                <div class="edit-buttons">
+                    <button class="edit-btn cancel">Cancel</button>
+                    <button class="edit-btn save">Save Changes</button>
+                </div>
+            </div>
+        `;
+        
+        // Add event listeners
+        overlay.querySelector('.cancel').onclick = () => {
+            hideEditDialog(overlay);
+            resolve(null);
+        };
+        
+        overlay.querySelector('.save').onclick = () => {
+            const newText = document.getElementById('editSentenceText').value.trim();
+            const newAuthor = document.getElementById('editSentenceAuthor').value.trim();
+            
+            if (newText) {
+                hideEditDialog(overlay);
+                resolve({ text: newText, author: newAuthor });
+            } else {
+                // Show validation error
+                showNotification('Please enter a sentence!', 'error', '⚠️');
+            }
+        };
+        
+        // Close on overlay click
+        overlay.onclick = (e) => {
+            if (e.target === overlay) {
+                hideEditDialog(overlay);
+                resolve(null);
+            }
+        };
+        
+        // Handle Enter key to save (Ctrl+Enter for textarea)
+        overlay.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && e.ctrlKey) {
+                overlay.querySelector('.save').click();
+            } else if (e.key === 'Escape') {
+                overlay.querySelector('.cancel').click();
+            }
+        });
+        
+        // Add to page and show
+        document.body.appendChild(overlay);
+        
+        // Focus on textarea
+        setTimeout(() => {
+            const textarea = document.getElementById('editSentenceText');
+            textarea.focus();
+            textarea.select();
+        }, 100);
+    });
+}
+
 // Add interactive features to your learning journal
 document.addEventListener('DOMContentLoaded', function() {
     console.log('English Learning Journal loaded!');
@@ -486,18 +657,17 @@ async function deleteVocab(index) {
 }
 
 // Function to edit vocabulary
-function editVocab(index) {
+async function editVocab(index) {
     const vocab = savedVocab[index];
-    const newWord = prompt('Edit word:', vocab.word);
-    const newDefinition = prompt('Edit definition:', vocab.definition);
+    const result = await showEditDialog('Edit Vocabulary', vocab.word, vocab.definition);
     
-    if (newWord && newDefinition) {
-        savedVocab[index] = { word: newWord.trim(), definition: newDefinition.trim() };
+    if (result) {
+        savedVocab[index] = { word: result.word, definition: result.definition };
         localStorage.setItem('vocabList', JSON.stringify(savedVocab));
         refreshVocabDisplay();
         
         // Show edit notification
-        showNotification(`Word "${newWord}" updated!`, 'edit', '📝');
+        showNotification(`Word "${result.word}" updated!`, 'edit', '📝');
     }
 }
 
@@ -521,13 +691,12 @@ async function deleteSentence(index) {
 }
 
 // Function to edit sentence
-function editSentence(index) {
+async function editSentence(index) {
     const sentence = savedSentences[index];
-    const newText = prompt('Edit sentence:', sentence.text);
-    const newAuthor = prompt('Edit author (optional):', sentence.author || '');
+    const result = await showSentenceEditDialog('Edit Sentence', sentence.text, sentence.author || '');
     
-    if (newText) {
-        savedSentences[index] = { text: newText.trim(), author: newAuthor.trim() };
+    if (result) {
+        savedSentences[index] = { text: result.text, author: result.author };
         localStorage.setItem('sentenceList', JSON.stringify(savedSentences));
         refreshSentencesDisplay();
         
