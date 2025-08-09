@@ -1151,7 +1151,48 @@ function generateVocabularysuggestions(word) {
 function getSmartVocabularySuggestions(word) {
     // Advanced vocabulary suggestion database
     const vocabularyDB = {
-        // Academic & Professional
+        // Phrases and phrasal verbs
+        'calm down': {
+            synonyms: ['relax', 'chill out', 'settle down', 'take it easy'],
+            antonyms: ['get worked up', 'panic', 'lose control', 'freak out'],
+            related: ['breathe', 'compose yourself', 'stay cool', 'unwind'],
+            examples: [
+                'Calm down, everything will be alright.',
+                'I need to calm down before the presentation.',
+                'Please calm down and tell me what happened.'
+            ]
+        },
+        'give up': {
+            synonyms: ['quit', 'surrender', 'abandon', 'stop trying'],
+            antonyms: ['persist', 'continue', 'keep going', 'persevere'],
+            related: ['quit', 'stop', 'abandon', 'surrender'],
+            examples: [
+                'Never give up on your dreams.',
+                'Don\'t give up when things get tough.',
+                'She refused to give up despite the challenges.'
+            ]
+        },
+        'look forward': {
+            synonyms: ['anticipate', 'expect', 'await', 'be excited about'],
+            antonyms: ['dread', 'fear', 'worry about'],
+            related: ['hope', 'expect', 'anticipate', 'await'],
+            examples: [
+                'I look forward to meeting you tomorrow.',
+                'We look forward to the vacation next month.',
+                'Students look forward to summer break.'
+            ]
+        },
+        // Single words
+        'calm': {
+            synonyms: ['peaceful', 'serene', 'tranquil', 'composed'],
+            antonyms: ['agitated', 'anxious', 'frantic', 'restless'],
+            related: ['relax', 'soothe', 'quiet', 'still'],
+            examples: [
+                'Stay calm during stressful situations.',
+                'The calm ocean reflected the sunset beautifully.',
+                'She remained calm despite the chaos around her.'
+            ]
+        },
         'resilience': {
             synonyms: ['perseverance', 'tenacity', 'endurance', 'fortitude', 'grit'],
             antonyms: ['fragility', 'weakness', 'vulnerability'],
@@ -1224,9 +1265,10 @@ function getSmartVocabularySuggestions(word) {
         }
     };
     
-    // Check if we have specific data for this word
-    if (vocabularyDB[word]) {
-        return vocabularyDB[word];
+    // Check if we have specific data for this word (handle both phrases and single words)
+    const searchTerm = word.toLowerCase().trim();
+    if (vocabularyDB[searchTerm]) {
+        return vocabularyDB[searchTerm];
     }
     
     // Generate contextual suggestions based on word patterns
