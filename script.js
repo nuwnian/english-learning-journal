@@ -1026,12 +1026,31 @@ function initializeNavigation() {
     navLinks.forEach(link => {
         link.addEventListener('click', function(e) {
             e.preventDefault();
-            const targetId = this.getAttribute('href').substring(1);
+            const href = this.getAttribute('href');
+            // Remove active state from all nav links instantly
+            navLinks.forEach(l => l.classList.remove('active'));
+            // If Home, do not set any active
+            if (href === '#' || href === '' || href === window.location.pathname) {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                return;
+            }
+            // Set this link as active instantly
+            this.classList.add('active');
+            const targetId = href.substring(1);
             const targetSection = document.getElementById(targetId);
-            
             if (targetSection) {
-                targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                updateActiveNavigation(targetId);
+                const header = document.querySelector('header');
+                const headerHeight = header ? header.offsetHeight : 0;
+                const sectionTop = targetSection.getBoundingClientRect().top + window.pageYOffset;
+                if (sectionTop - headerHeight - 10 < 10) {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                } else {
+                    window.scrollTo({
+                        top: sectionTop - headerHeight - 10,
+                        behavior: 'smooth'
+                    });
+                }
+                // updateActiveNavigation(targetId); // No need to call here, already set
             }
         });
     });
@@ -1056,15 +1075,20 @@ function updateActiveNavigation(activeSection) {
 function updateNavigationOnScroll() {
     const sections = document.querySelectorAll('section[id]');
     const scrollPos = window.scrollY + 200;
-    
+    let found = false;
     sections.forEach(section => {
         const top = section.offsetTop;
         const bottom = top + section.offsetHeight;
-        
         if (scrollPos >= top && scrollPos <= bottom) {
             updateActiveNavigation(section.id);
+            found = true;
         }
     });
+    // If at the very top, remove all active states
+    if (window.scrollY < 50 && !found) {
+        const navLinks = document.querySelectorAll('nav a[href^="#"]');
+        navLinks.forEach(link => link.classList.remove('active'));
+    }
 }
 
 // Example usage:
@@ -1618,3 +1642,35 @@ function initializeFormToggles() {
         });
     }
 }
+
+// --- Limitations Section Bilingual Support ---
+const limitationsEN = [
+  'Requires users to provide their own Google Gemini API key for AI features, which may be confusing for non-technical users.',
+  'AI suggestions depend on an external service and internet connection.',
+  'No user authentication or cloud storage—data is stored locally in the browser.',
+  'Not optimized for mobile offline use.',
+  'Lacks advanced progress tracking or spaced repetition features.',
+  'Only supports English vocabulary (no multi-language support yet).'
+];
+const limitationsID = [
+  'Pengguna harus memasukkan API key Google Gemini mereka sendiri untuk fitur AI, yang bisa membingungkan bagi pengguna non-teknis.',
+  'Saran AI bergantung pada layanan eksternal dan koneksi internet.',
+  'Tidak ada autentikasi pengguna atau penyimpanan cloud—data disimpan secara lokal di browser.',
+  'Belum dioptimalkan untuk penggunaan offline di perangkat mobile.',
+  'Belum ada fitur pelacakan progres lanjutan atau pengulangan terjadwal.',
+  'Hanya mendukung kosakata bahasa Inggris (belum ada dukungan multi-bahasa).'
+];
+function updateLimitationsSection() {
+  const list = document.querySelector('#limitationsContent ul');
+  if (!list) return;
+  list.innerHTML = (translationsVisible ? limitationsID : limitationsEN)
+    .map(item => `<li>${item}</li>`).join('');
+}
+// Patch translation toggle to also update limitations
+const origToggleTranslation = window.toggleTranslation;
+window.toggleTranslation = function() {
+  if (origToggleTranslation) origToggleTranslation();
+  updateLimitationsSection();
+};
+document.addEventListener('DOMContentLoaded', updateLimitationsSection);
+// --- End Limitations Section Bilingual Support ---

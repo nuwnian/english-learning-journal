@@ -17,7 +17,8 @@
     </div>
   </header>
   <nav>
-    <a href="#vocab">Vocabulary</a>
+  <a href="#" id="homeNav">Home</a>
+  <a href="#vocab">Vocabulary</a>
     <a href="#grammar">Grammar</a>
     <a href="#sentences">Sentences</a>
     <div class="nav-extras">
@@ -110,10 +111,40 @@
         </div>
       </div>
     </section>
+
+    <section id="limitations" style="max-width:700px;margin:2rem auto 2rem auto;padding:1.5rem 1rem;background:#fff8e1;border-radius:12px;border:1px solid #ffe082;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+      <h2 style="color:#b26a00;font-size:1.2rem;margin-bottom:0.5rem;display:flex;align-items:center;gap:0.5rem;">
+        <span>⚠️ Limitations</span>
+        <button id="toggleLimitations" class="toggle-form-btn" title="Show/Hide Limitations" style="margin-left:0.5rem;font-size:1.1rem;">🔽</button>
+      </h2>
+      <div id="limitationsContent" style="display:none;">
+        <ul style="margin:0 0 0 1.2rem;padding:0;line-height:1.7;color:#7c6f57;font-size:1rem;">
+          <li>Requires users to provide their own Google Gemini API key for AI features, which may be confusing for non-technical users.</li>
+          <li>AI suggestions depend on an external service and internet connection.</li>
+          <li>No user authentication or cloud storage—data is stored locally in the browser.</li>
+          <li>Not optimized for mobile offline use.</li>
+          <li>Lacks advanced progress tracking or spaced repetition features.</li>
+          <li>Only supports English vocabulary (no multi-language support yet).</li>
+        </ul>
+      </div>
+    </section>
   </main>
   <footer>
     Made with 💙 by Yulfa
   </footer>
   <script src="script.js"></script>
+  <script>
+    // Toggle Limitations Section
+    document.addEventListener('DOMContentLoaded', function() {
+      var btn = document.getElementById('toggleLimitations');
+      var content = document.getElementById('limitationsContent');
+      var open = false;
+      btn.addEventListener('click', function() {
+        open = !open;
+        content.style.display = open ? 'block' : 'none';
+        btn.textContent = open ? '🔼' : '🔽';
+      });
+    });
+  </script>
 </body>
 </html>
