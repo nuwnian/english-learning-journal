@@ -1,3 +1,17 @@
+// Remove search icon from placeholder on focus, restore on blur
+document.addEventListener('DOMContentLoaded', function() {
+    var searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        var originalPlaceholder = searchInput.placeholder;
+        var noIconPlaceholder = originalPlaceholder.replace('🔍 ', '');
+        searchInput.addEventListener('focus', function() {
+            searchInput.placeholder = noIconPlaceholder;
+        });
+        searchInput.addEventListener('blur', function() {
+            searchInput.placeholder = originalPlaceholder;
+        });
+    }
+});
 // English Learning Journal JavaScript
 
 // Load saved data from localStorage
