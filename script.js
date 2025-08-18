@@ -1108,10 +1108,9 @@ function initializeTranslationToggle() {
     toggleBtn.addEventListener('click', function() {
         translationsVisible = !translationsVisible;
         localStorage.setItem('translationsVisible', translationsVisible.toString());
-        
         updateTranslationButton(toggleBtn);
         updateTranslationVisibility();
-        
+        updateLimitationsSection(); // Ensure limitations update with language toggle
         // Show notification
         const message = translationsVisible ? 
             'Indonesian translations shown! 🇮🇩' : 
@@ -1667,10 +1666,6 @@ function updateLimitationsSection() {
     .map(item => `<li>${item}</li>`).join('');
 }
 // Patch translation toggle to also update limitations
-const origToggleTranslation = window.toggleTranslation;
-window.toggleTranslation = function() {
-  if (origToggleTranslation) origToggleTranslation();
-  updateLimitationsSection();
-};
+document.addEventListener('DOMContentLoaded', updateLimitationsSection);
 document.addEventListener('DOMContentLoaded', updateLimitationsSection);
 // --- End Limitations Section Bilingual Support ---
