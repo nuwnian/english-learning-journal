@@ -1,13 +1,13 @@
 // Remove search icon from placeholder on focus, restore on blur
 document.addEventListener('DOMContentLoaded', function() {
-    var searchInput = document.getElementById('searchInput');
+    const searchInput = document.getElementById('searchInput');
     if (searchInput) {
-        var originalPlaceholder = searchInput.placeholder;
-        var noIconPlaceholder = originalPlaceholder.replace('🔍 ', '');
-        searchInput.addEventListener('focus', function() {
+        const originalPlaceholder = searchInput.placeholder;
+        const noIconPlaceholder = originalPlaceholder.replace('🔍 ', '');
+        searchInput.addEventListener('focus', () => {
             searchInput.placeholder = noIconPlaceholder;
         });
-        searchInput.addEventListener('blur', function() {
+        searchInput.addEventListener('blur', () => {
             searchInput.placeholder = originalPlaceholder;
         });
     }
@@ -15,8 +15,20 @@ document.addEventListener('DOMContentLoaded', function() {
 // English Learning Journal JavaScript
 
 // Load saved data from localStorage
-let savedVocab = JSON.parse(localStorage.getItem('vocabList')) || [];
-let savedSentences = JSON.parse(localStorage.getItem('sentenceList')) || [];
+let savedVocab = [];
+let savedSentences = [];
+
+try {
+    savedVocab = JSON.parse(localStorage.getItem('vocabList')) || [];
+} catch (e) {
+    console.warn('Failed to load vocabulary data:', e);
+}
+
+try {
+    savedSentences = JSON.parse(localStorage.getItem('sentenceList')) || [];
+} catch (e) {
+    console.warn('Failed to load sentences data:', e);
+}
 
 // Search functionality
 let searchResults = [];
@@ -61,12 +73,14 @@ function showNotification(message, type = 'success', icon = '✓') {
     // Auto-hide after 3 seconds
     setTimeout(() => {
         notification.classList.remove('show');
-        setTimeout(() => {
-            if (notification.parentNode) {
-                notification.remove();
-            }
-        }, 400);
     }, 3000);
+    
+    // Remove after animation completes
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 3400);
 }
 
 // Custom confirmation dialog function
@@ -127,7 +141,7 @@ function showConfirmDialog(title, message, icon = '⚠️') {
 function hideConfirmDialog(overlay) {
     overlay.classList.remove('show');
     setTimeout(() => {
-        if (overlay.parentNode) {
+    if (overlay.parentNode) {
             overlay.remove();
         }
     }, 300);
@@ -136,6 +150,19 @@ function hideConfirmDialog(overlay) {
 // Custom edit dialog function
 function showEditDialog(title, currentWord, currentDefinition, icon = '📝') {
     return new Promise((resolve, reject) => {
+        // Validate inputs
+        if (typeof title !== 'string' || typeof currentWord !== 'string' || typeof currentDefinition !== 'string') {
+            reject(new Error('Invalid input'));
+            return;
+        }
+        
+        // Authorization check - verify item exists in user's vocabulary
+        const isAuthorized = savedVocab.some(vocab => vocab.word === currentWord && vocab.definition === currentDefinition);
+        if (!isAuthorized) {
+            reject(new Error('Unauthorized access'));
+            return;
+        }
+        
         // Remove any existing edit dialogs
         const existingDialogs = document.querySelectorAll('.edit-overlay');
         existingDialogs.forEach(dialog => dialog.remove());
@@ -143,28 +170,40 @@ function showEditDialog(title, currentWord, currentDefinition, icon = '📝') {
         // Create overlay
         const overlay = document.createElement('div');
         overlay.className = 'edit-overlay';
-        overlay.innerHTML = `
-            <div class="edit-dialog">
-                <div class="edit-header">
-                    <span class="edit-icon">${icon}</span>
-                    <h3>${title}</h3>
+        
+        // Create dialog safely
+        const dialog = document.createElement('div');
+        dialog.className = 'edit-dialog';
+        dialog.innerHTML = `
+            <div class="edit-header">
+                <span class="edit-icon">📝</span>
+                <h3>Edit Vocabulary</h3>
+            </div>
+            <div class="edit-content">
+                <div class="edit-field">
+                    <label>Word:</label>
+                    <input type="text" id="editWord" placeholder="Enter word...">
                 </div>
-                <div class="edit-content">
-                    <div class="edit-field">
-                        <label>Word:</label>
-                        <input type="text" id="editWord" value="${currentWord}" placeholder="Enter word...">
-                    </div>
-                    <div class="edit-field">
-                        <label>Definition:</label>
-                        <input type="text" id="editDefinition" value="${currentDefinition}" placeholder="Enter definition...">
-                    </div>
-                </div>
-                <div class="edit-buttons">
-                    <button class="edit-btn cancel">Cancel</button>
-                    <button class="edit-btn save">Save Changes</button>
+                <div class="edit-field">
+                    <label>Definition:</label>
+                    <input type="text" id="editDefinition" placeholder="Enter definition...">
                 </div>
             </div>
+            <div class="edit-buttons">
+                <button class="edit-btn cancel">Cancel</button>
+                <button class="edit-btn save">Save Changes</button>
+            </div>
         `;
+        
+        overlay.appendChild(dialog);
+        
+        // Set values safely after DOM creation
+        setTimeout(() => {
+            const wordInput = document.getElementById('editWord');
+            const defInput = document.getElementById('editDefinition');
+            if (wordInput) wordInput.value = currentWord;
+            if (defInput) defInput.value = currentDefinition;
+        }, 0);
         
         // Add event listeners
         overlay.querySelector('.cancel').onclick = () => {
@@ -187,7 +226,7 @@ function showEditDialog(title, currentWord, currentDefinition, icon = '📝') {
         
         // Close on overlay click
         overlay.onclick = (e) => {
-            if (e.target === overlay) {
+        if (e.target === overlay) {
                 hideEditDialog(overlay);
                 resolve(null);
             }
@@ -235,7 +274,7 @@ function showSentenceEditDialog(title, currentText, currentAuthor = '', icon = '
         overlay.className = 'edit-overlay';
         overlay.innerHTML = `
             <div class="edit-dialog">
-                <div class="edit-header">
+            <div class="edit-header">
                     <span class="edit-icon">${icon}</span>
                     <h3>${title}</h3>
                 </div>
@@ -306,7 +345,7 @@ function showSentenceEditDialog(title, currentText, currentAuthor = '', icon = '
 
 // Add interactive features to your learning journal
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('English Learning Journal loaded!');
+console.log('English Learning Journal loaded!');
     
     // Load saved vocabulary and sentences on page load
     loadSavedVocab();
@@ -337,13 +376,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const newDefinitionIDInput = document.getElementById('newDefinitionID');
     
     if (newWordInput && newDefinitionInput) {
-        newWordInput.addEventListener('keypress', function(e) {
+       newWordInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 newDefinitionInput.focus(); // Move to definition field
             }
         });
         
-        newDefinitionInput.addEventListener('keypress', function(e) {
+       newDefinitionInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 if (newWordIDInput) {
                     newWordIDInput.focus(); // Move to Indonesian word field
@@ -354,7 +393,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         if (newWordIDInput && newDefinitionIDInput) {
-            newWordIDInput.addEventListener('keypress', function(e) {
+        newWordIDInput.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
                     newDefinitionIDInput.focus(); // Move to Indonesian definition field
                 }
@@ -371,7 +410,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Add click effects to navigation links
     const navLinks = document.querySelectorAll('nav a');
     navLinks.forEach(link => {
-        link.addEventListener('click', function(e) {
+    link.addEventListener('click', function(e) {
             // Smooth scrolling to sections
             e.preventDefault();
             const targetId = this.getAttribute('href').substring(1);
@@ -416,7 +455,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Function to load saved vocabulary from localStorage
 function loadSavedVocab() {
-    const vocabList = document.querySelector('#vocab ul');
+const vocabList = document.querySelector('#vocab ul');
     vocabList.innerHTML = ''; // Clear existing items first
     savedVocab.forEach((vocab, index) => {
         addVocabularyToDOM(vocab.word, vocab.definition, index, vocab.wordID || '', vocab.definitionID || '');
@@ -463,7 +502,7 @@ function addVocabularyToDOM(word, definition, index, wordID = '', definitionID =
     ` : '';
     
     newItem.innerHTML = `
-        <div class="vocab-item-content">
+    <div class="vocab-item-content">
             <div class="item-content">
                 <strong>${word}</strong> – ${definition}
             </div>
@@ -1345,16 +1384,25 @@ function showApiKeyPrompt() {
 }
 
 function saveApiKey() {
-    const apiKeyInput = document.getElementById('apiKeyInput');
-    const key = apiKeyInput.value.trim();
-    
-    if (key) {
-        geminiApiKey = key;
-        localStorage.setItem('geminiApiKey', key);
-        closeApiKeyModal();
-        showNotification('API Key saved! AI is now active 🤖', 'success');
-    } else {
-        showNotification('Please enter a valid API key', 'error');
+    try {
+        const apiKeyInput = document.getElementById('apiKeyInput');
+        if (!apiKeyInput) {
+            showNotification('Error: Input field not found', 'error');
+            return;
+        }
+        
+        const key = apiKeyInput.value.trim();
+        
+        if (key) {
+            geminiApiKey = key;
+            localStorage.setItem('geminiApiKey', key);
+            closeApiKeyModal();
+            showNotification('API Key saved! AI is now active 🤖', 'success');
+        } else {
+            showNotification('Please enter a valid API key', 'error');
+        }
+    } catch (error) {
+        showNotification('Failed to save API key', 'error');
     }
 }
 
