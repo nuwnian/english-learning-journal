@@ -17,14 +17,21 @@
     </div>
   </header>
   <nav>
-  <a href="#" id="homeNav">Home</a>
-  <a href="#vocab">Vocabulary</a>
-    <a href="#grammar">Grammar</a>
-    <a href="#sentences">Sentences</a>
-    <div class="nav-extras">
-      <button id="translationToggle" class="translation-toggle-btn">🇮🇩 ID</button>
-      <button id="clearSearch" class="clear-search-btn" style="display: none;">Clear Search</button>
-      <span id="searchCount" class="search-count"></span>
+    <button class="hamburger" id="hamburger" aria-label="Toggle navigation">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+    <div class="nav-menu" id="navMenu">
+      <a href="#" id="homeNav">Home</a>
+      <a href="#vocab">Vocabulary</a>
+      <a href="#grammar">Grammar</a>
+      <a href="#sentences">Sentences</a>
+      <div class="nav-extras">
+        <button id="translationToggle" class="translation-toggle-btn">🇮🇩 ID</button>
+        <button id="clearSearch" class="clear-search-btn" style="display: none;">Clear Search</button>
+        <span id="searchCount" class="search-count"></span>
+      </div>
     </div>
   </nav>
   <main>
@@ -136,6 +143,32 @@
         open = !open;
         content.style.display = open ? 'block' : 'none';
         btn.textContent = open ? '🔼' : '🔽';
+      });
+      
+      // Hamburger Menu Toggle
+      var hamburger = document.getElementById('hamburger');
+      var navMenu = document.getElementById('navMenu');
+      
+      hamburger.addEventListener('click', function() {
+        hamburger.classList.toggle('active');
+        navMenu.classList.toggle('active');
+      });
+      
+      // Close menu when clicking on nav links
+      var navLinks = navMenu.querySelectorAll('a');
+      navLinks.forEach(function(link) {
+        link.addEventListener('click', function() {
+          hamburger.classList.remove('active');
+          navMenu.classList.remove('active');
+        });
+      });
+      
+      // Close menu when clicking outside
+      document.addEventListener('click', function(e) {
+        if (!hamburger.contains(e.target) && !navMenu.contains(e.target)) {
+          hamburger.classList.remove('active');
+          navMenu.classList.remove('active');
+        }
       });
     });
   </script>

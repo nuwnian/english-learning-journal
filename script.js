@@ -94,22 +94,33 @@ function showConfirmDialog(title, message, icon = '⚠️') {
         const overlay = document.createElement('div');
         overlay.className = 'confirm-overlay';
         
-        // Create dialog
-        overlay.innerHTML = `
-            <div class="confirm-dialog">
-                <div class="icon">${icon}</div>
-                <h3>${title}</h3>
-                <p>${message}</p>
-                <div class="confirm-buttons">
-                    <button class="confirm-btn cancel">Cancel</button>
-                    <button class="confirm-btn delete">Delete</button>
-                </div>
-            </div>
-        `;
+        // Create dialog safely
+        const dialog = document.createElement('div');
+        dialog.className = 'confirm-dialog';
+        
+        const iconDiv = document.createElement('div');
+        iconDiv.className = 'icon';
+        iconDiv.textContent = icon;
+        
+        const titleH3 = document.createElement('h3');
+        titleH3.textContent = title;
+        
+        const messageP = document.createElement('p');
+        messageP.textContent = message;
+        
+        const buttonsDiv = document.createElement('div');
+        buttonsDiv.className = 'confirm-buttons';
+        buttonsDiv.innerHTML = '<button class="confirm-btn cancel">Cancel</button><button class="confirm-btn delete">Delete</button>';
+        
+        dialog.appendChild(iconDiv);
+        dialog.appendChild(titleH3);
+        dialog.appendChild(messageP);
+        dialog.appendChild(buttonsDiv);
+        overlay.appendChild(dialog);
         
         // Add event listeners
-        const cancelBtn = overlay.querySelector('.cancel');
-        const deleteBtn = overlay.querySelector('.delete');
+        const cancelBtn = dialog.querySelector('.cancel');
+        const deleteBtn = dialog.querySelector('.delete');
         
         cancelBtn.addEventListener('click', () => {
             hideConfirmDialog(overlay);
@@ -156,10 +167,15 @@ function showEditDialog(title, currentWord, currentDefinition, icon = '📝') {
             return;
         }
         
-        // Authorization check - verify item exists in user's vocabulary
-        const isAuthorized = savedVocab.some(vocab => vocab.word === currentWord && vocab.definition === currentDefinition);
-        if (!isAuthorized) {
-            reject(new Error('Unauthorized access'));
+        // Authorization check - verify user session and item ownership
+        if (!savedVocab || savedVocab.length === 0) {
+            reject(new Error('No vocabulary data available'));
+            return;
+        }
+        
+        const itemIndex = savedVocab.findIndex(vocab => vocab.word === currentWord && vocab.definition === currentDefinition);
+        if (itemIndex === -1) {
+            reject(new Error('Unauthorized: Item not found in user vocabulary'));
             return;
         }
         
